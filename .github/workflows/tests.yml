@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-core:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile Windows sources
+        run: python -m py_compile windows/activity_core.py windows/windows_activity_tracker.py windows/test_activity_core.py windows/test_windows_entry.py
+      - name: Run Windows core tests
+        working-directory: windows
+        run: python -m unittest -v
+
+  linux-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile Linux sources
+        run: python -m py_compile computer_activity_tracker.py smoke_test.py test_tracker.py test_target.py
+      - name: Run Linux unit tests
+        run: python -m unittest -v test_tracker.py
