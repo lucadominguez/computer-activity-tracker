@@ -1,0 +1,45 @@
+{
+  "title": "Activity Tracker",
+  "eyebrow": "Source and status",
+  "subtitle": [
+    "Focused windows, elapsed time,",
+    "and count-only input activity."
+  ],
+  "status": "Experimental collector \u00b7 Windows and X11",
+  "motif": "activity",
+  "accent": "#256C62",
+  "footer": "computer-activity-tracker",
+  "overview_title": "From the foreground window to a local record",
+  "overview_subtitle": "Repository overview. Read the source and limitations alongside the illustration.",
+  "nodes": [
+    {
+      "icon": "window",
+      "title": "Observe focus",
+      "lines": [
+        "Window title and application.",
+        "Input is counted, not stored."
+      ]
+    },
+    {
+      "icon": "clock",
+      "title": "Track intervals",
+      "lines": [
+        "Coalesce focus segments.",
+        "Record periods away."
+      ]
+    },
+    {
+      "icon": "database",
+      "title": "Inspect locally",
+      "lines": [
+        "SQLite and CLI reports.",
+        "No graphical dashboard."
+      ]
+    }
+  ],
+  "notes": [
+    "Source-grounded overview",
+    "No runtime or outcome guarantee"
+  ],
+  "caveat": "Conceptual illustration of repository scope, not a screenshot or measured result."
+}

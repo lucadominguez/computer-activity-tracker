@@ -1,16 +1,25 @@
-# Computer Activity Tracker
+<p align="center"><a href="assets/presentation/banner.png"><img src="assets/presentation/banner.png" width="900" alt="Activity Tracker: Experimental collector · Windows and X11"></a></p>
 
-A local-only activity collector for Windows and Linux/X11. It records focused window titles, application identities, focus duration, aggregate key counts, and AFK intervals into SQLite.
+# Activity Tracker
 
-It never stores raw keystrokes, screenshots, prompts, clipboard contents, or model data.
+A background collector for Windows and Linux/X11. It records focused window
+titles, application identities, focus duration, aggregate key counts and AFK
+intervals in a local SQLite database. It does not include a graphical dashboard.
 
-> This release is a background collector with CLI reports. It does not include a graphical dashboard yet.
+Raw keystrokes, screenshots and clipboard contents are not stored. Window titles
+can still contain sensitive information. Use it on your own machine, review
+what it captures, and avoid sharing the raw database.
+
+The X11 recorder was exercised with synthetic windows on an isolated display.
+Windows core tests also run on Linux; that is not a fresh Windows installer test.
+
+[![From the foreground window to a local record](assets/presentation/overview.png)](assets/presentation/overview.png)
 
 ## Platforms
 
 | Platform | Capture layer | Status |
 |---|---|---|
-| Windows 10/11 | Win32 foreground window, process path, `GetLastInputInfo`, count-only `pynput` hook | Tested on Windows 11 |
+| Windows 10/11 | Win32 foreground window, process path, `GetLastInputInfo`, count-only `pynput` hook | Win32 implementation; see platform guide |
 | Linux/X11 | `_NET_ACTIVE_WINDOW`, `WM_CLASS`, raw XI2 input events | Tested on Xvfb with Openbox |
 | Wayland | Not implemented | Unsupported |
 | macOS | Not implemented | Unsupported |
@@ -145,3 +154,9 @@ The Windows core checkpoints open focus segments on every poll, limiting crash l
 ## License
 
 MIT. See [`LICENSE`](LICENSE).
+
+## Illustration sources
+
+The figures explain the repository’s scope; they are not captured product
+screens or benchmark results. Editable sources and rendering instructions are
+in [scripts/artwork](scripts/artwork/README.md).
