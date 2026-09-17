@@ -39,6 +39,17 @@ recorder rather than starting a second writer.
 - **Access History:** receipts for context handoffs created in this app. These are
   not invented third-party-agent logs and do not claim to audit every local read.
 
+![Recall: searching saved OCR text in the Passage for Windows app](docs/screenshots/passage-recall.png)
+
+![Timeline: moving through real saved frames](docs/screenshots/passage-timeline.png)
+
+![Sessions: continuous same-app periods grouped locally](docs/screenshots/passage-sessions.png)
+
+![Access History: local context handoff receipts](docs/screenshots/passage-access-history.png)
+
+*Screenshots taken from a labelled test recording with screenshots off, not from
+personal history.*
+
 **Hand Off Context** prepares the selected OCR text and source metadata for you
 to review and copy. It records what was prepared, but does not contact an AI
 provider, transmit screenshots or alter an external agent's permissions.

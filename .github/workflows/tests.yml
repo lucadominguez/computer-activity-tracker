@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install application dependencies
+        run: python -m pip install --disable-pip-version-check .
       - name: Compile Windows sources
         run: python -m py_compile windows/activity_core.py windows/windows_activity_tracker.py windows/test_activity_core.py windows/test_windows_entry.py
       - name: Run Windows core tests
@@ -36,6 +38,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install application dependencies
+        run: python -m pip install --disable-pip-version-check .
       - name: Compile Linux sources
         run: python -m py_compile computer_activity_tracker.py smoke_test.py test_tracker.py test_target.py
       - name: Run Linux unit tests
