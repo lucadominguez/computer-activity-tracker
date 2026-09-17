@@ -242,19 +242,20 @@
                 <h2>Inspectable by design</h2>
                 <p>
                   Passage records a receipt here before selected text is
-                  released to the handoff dialog. Copying it to another app is
-                  your choice.
+                  released to the handoff dialog, and before any context
+                  inference call. Copying it to another app is your choice.
                 </p>
                 <p>
-                  Screenshots stay in the local vault. Handoffs contain text and
-                  source IDs, never image data.
+                  Screenshots stay in the local vault. Handoffs and inference
+                  calls carry text, source IDs and the endpoint that answered,
+                  never image data.
                 </p>
                 <div class="service-state">
                   ● No external agent access enabled
                 </div>
                 <p class="muted">
-                  These are local handoff receipts, not evidence that another
-                  app read your history.
+                  These are local receipts: what this app prepared or sent. They
+                  are not evidence that another app read your history.
                 </p>
               </div>
             </div>
@@ -327,10 +328,58 @@
           </p>
           <p>
             This is a Windows adaptation of Sid’s Passage. Visual similarity
-            search, Memory Lens and AI session answers from the Mac version are
-            not included. Nothing is sent to a model or cloud service.
+            search and Memory Lens from the Mac version are not included.
+            Screenshots are never sent anywhere. Text leaves this computer only
+            through the optional context inference below, and only when you click
+            Infer context.
           </p>
           <a href="/activity">Open earlier activity history and exports</a>
+        </details>
+        <details class="inference-settings" open>
+          <summary>Context inference (optional)</summary>
+          <label class="check-row"
+            ><input type="checkbox" id="infer-enabled" />Infer what chosen moments
+            were about, using a model</label
+          >
+          <p class="muted">
+            Off by default, and it runs only when you click Infer context on a
+            moment or session. It sends the text read from up to 20 chosen
+            moments together with their window titles, app names and timestamps to
+            the endpoint below. Screenshots, file paths and window positions never
+            leave this computer. Every call is receipted in Access History, and
+            the inferred result is stored encrypted on this computer.
+          </p>
+          <div class="settings-grid">
+            <label
+              >Endpoint URL<input
+                type="url"
+                id="infer-url"
+                maxlength="200"
+                placeholder="https://api.openai.com/v1"
+              /></label
+            ><label
+              >Model<input
+                type="text"
+                id="infer-model"
+                maxlength="120"
+                placeholder="gpt-4o-mini" /></label
+            ><label
+              >API key<input
+                type="password"
+                id="infer-key"
+                maxlength="400"
+                autocomplete="off"
+                placeholder="leave blank to keep the stored key" /></label
+          ></div>
+          <label class="check-row"
+            ><input type="checkbox" id="infer-clear-key" />Remove the stored
+            key</label
+          >
+          <p class="muted" id="infer-key-state"></p>
+          <p class="muted">
+            Use an https address, or http only for 127.0.0.1 if you run a model on
+            this computer. The address is not verified as trustworthy.
+          </p>
         </details>
         <div class="dialog-actions">
           <button id="quit" type="button" class="danger">Quit tracker</button
@@ -358,6 +407,30 @@
       <div class="dialog-actions">
         <span id="copy-status" role="status"></span
         ><button id="copy-handoff" class="primary">Copy text</button>
+      </div>
+    </dialog>
+    <dialog id="infer-dialog" aria-labelledby="infer-title">
+      <div class="dialog-head">
+        <h2 id="infer-title">Inferred context</h2>
+        <button data-close="infer-dialog" aria-label="Close inferred context">
+          ×
+        </button>
+      </div>
+      <p id="infer-scope" class="muted"></p>
+      <div id="infer-body" aria-live="polite"></div>
+      <details id="infer-plain" hidden>
+        <summary>Plain text version</summary>
+        <textarea
+          id="infer-text"
+          aria-label="Inferred context as text"
+          readonly
+          rows="8"
+        ></textarea>
+      </details>
+      <div class="dialog-actions">
+        <span id="infer-status" role="status"></span
+        ><button id="infer-settings" hidden>Open Settings</button
+        ><button id="infer-copy" class="primary" hidden>Copy as context</button>
       </div>
     </dialog>
     <dialog id="confirm-dialog" aria-labelledby="confirm-title">

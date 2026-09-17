@@ -51,8 +51,37 @@ recorder rather than starting a second writer.
 personal history.*
 
 **Hand Off Context** prepares the selected OCR text and source metadata for you
-to review and copy. It records what was prepared, but does not contact an AI
-provider, transmit screenshots or alter an external agent's permissions.
+to review and copy. It does not transmit anything itself.
+
+## Inferred context
+
+**Infer context** turns a saved moment or session into a readable account of what
+you were doing, instead of a wall of screen text. It is a separate, optional layer:
+
+- **Off by default.** It runs only when you click Infer context, and it needs an
+  endpoint and model chosen in Settings first.
+- **Text only.** The request carries the text read from up to 20 chosen moments,
+  their window titles, app names and timestamps. Screenshots, file paths and
+  window positions are never part of it.
+- **Cited.** The reading comes back as an activity, a task in play, mentioned
+  entities, open threads, a likely next step and a confidence level. Moments the
+  model actually used are linked back, and a reading that cites no moment is
+  labelled unverified.
+- **Receipted.** Every call is recorded in Access History with the endpoint, model
+  and duration, and the inferred result is stored encrypted on this computer so a
+  receipt can be re-read or copied later.
+- **Bounded and checked.** One bounded prompt, at most two attempts, and a strict
+  field check on the reply. A failed or malformed answer is reported as a failure;
+  it is never replaced by an invented reading.
+
+![Inferred context: one model reading with its sources and confidence](docs/screenshots/passage-inferred-context.png)
+
+*Inferred from a labelled test recording against a local stub endpoint.*
+
+Use an https endpoint, or http only for `127.0.0.1` if you run a model on this
+computer. An API key is stored in the encrypted vault and is never returned to the
+browser or written to a log. The app cannot verify that the endpoint you configure
+is trustworthy; that choice is yours.
 
 ## Recording and privacy
 
@@ -74,7 +103,8 @@ will be detected**. Pause before passwords, banking or other private work.
 - **Delete moment** removes that moment and its encrypted image. Previously copied
   exports are outside the app's control.
 - No audio, actual key contents, automatic clipboard reads, accounts, analytics,
-  cloud uploads, remote fonts or third-party runtime scripts.
+  remote fonts or third-party runtime scripts. Nothing is uploaded anywhere; the
+  only outbound request is the text you send yourself with Infer context.
 
 New screenshots and title/OCR payloads use **AES-GCM encryption**. On Windows,
 DPAPI binds the vault key to your Windows account. Plaintext search indexing stays
@@ -107,10 +137,11 @@ backup API rather than copying only the main database file.
 
 Upstream Passage is an Apache-2.0 macOS 14 / Apple Silicon app. This adaptation
 reuses its design grammar, not its Swift runtime. It does **not** include CoreML
-embeddings, semantic AI answers, macOS integrations, external-agent/MCP access,
-continuous audio or upstream SQLCipher storage. Context handoffs are manual.
-No unavailable feature is represented by a fabricated result or an active-looking
-button that does nothing.
+embeddings, visual similarity search, Memory Lens, macOS integrations,
+external-agent/MCP access, continuous audio or upstream SQLCipher storage.
+Context handoffs are manual, and context inference reaches an endpoint you choose
+rather than a bundled model. No unavailable feature is represented by a fabricated
+result or an active-looking button that does nothing.
 
 ## Development
 
@@ -121,6 +152,10 @@ python -m unittest discover -s windows -p 'test_*.py' -v
 ruff check activity_app tests
 python -m build
 ```
+
+`tests/test_inference.py` runs the context-inference layer against a local stub
+endpoint and asserts what a request may contain. `tests/test_infer_browser.py`
+needs the gated browser setup below.
 
 The default suite skips live browser/X11 tests. For an isolated Linux test host:
 

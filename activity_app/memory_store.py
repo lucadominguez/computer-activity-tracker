@@ -148,34 +148,76 @@ class MemoryStore:
             groups.reverse()
             return {"items": groups[:500], "total": len(groups), "has_more": len(groups) > 500}
 
-    def handoff(self, ids):
+    def context_items(self, ids, expand=True, limit=20, window=900):
+        """Ordered moments for one handoff or inference request.
+
+        Only the chosen moments are sent. When fewer than six were chosen, the
+        same app's moments within fifteen minutes join them, so a model can infer
+        the activity instead of reading one frame. Every request shows its own
+        source list, so the expansion is always visible.
+        """
         if not isinstance(ids, list) or not 1 <= len(ids) <= 20:
             raise ValueError("Choose between 1 and 20 moments.")
         with self.lock:
-            items = [self.get(mid) for mid in dict.fromkeys(ids)]
+            picks = [self.get(mid) for mid in dict.fromkeys(ids)]
+            chosen = {row["id"]: row for row in picks}
+            if expand and len(picks) < 6:
+                apps = {row["app"] for row in picks}
+                for row in self.items.values():
+                    if (
+                        row["app"] in apps
+                        and row["id"] not in chosen
+                        and any(abs(row["ts"] - pick["ts"]) <= window for pick in picks)
+                    ):
+                        chosen[row["id"]] = row
+            ordered = sorted(chosen.values(), key=lambda row: row["ts"])
+            anchors = {row["id"] for row in picks}
+            limit = max(limit, len(anchors))
+            if len(ordered) > limit:
+                extras = [row for row in ordered if row["id"] not in anchors]
+                room = max(0, limit - len(anchors))
+                ordered = sorted(
+                    [row for row in ordered if row["id"] in anchors] + extras[len(extras) - room :],
+                    key=lambda row: row["ts"],
+                )
+            return [dict(row) for row in ordered]
+
+    def commit_receipt(self, action, client, moments, characters, extra=None):
+        """Commit one receipt before any text or model request leaves the app."""
+        if not isinstance(moments, list) or not moments:
+            raise ValueError("A receipt needs at least one source moment.")
+        receipt = {
+            "id": uuid.uuid4().hex,
+            "ts": time.time(),
+            "action": action,
+            "client": client,
+            "sources": len(moments),
+            "bytes": int(characters),
+            "moment_ids": [row["id"] for row in moments],
+        }
+        receipt.update(extra or {})
+        with self.db:
+            self.db.execute(
+                "INSERT INTO receipts VALUES (?,?,?)",
+                (
+                    receipt["id"],
+                    receipt["ts"],
+                    self.vault.seal(json.dumps(receipt).encode(), "receipt:" + receipt["id"]),
+                ),
+            )
+        return receipt
+
+    def handoff(self, ids):
+        with self.lock:
+            items = self.context_items(ids, expand=False)
             text = "\n\n".join(
                 f"[{r['id']}] {r['app']} | {r['title']} | {r['ts']}\n{r['text']}" for r in items
             )
             text = text.encode("utf-8")[:20000].decode("utf-8", "ignore")
-            receipt = {
-                "id": uuid.uuid4().hex,
-                "ts": time.time(),
-                "action": "Context handoff",
-                "client": "Local app",
-                "sources": len(items),
-                "bytes": len(text.encode()),
-                "moment_ids": [r["id"] for r in items],
-            }
             # Commit before returning any text to the browser/clipboard.
-            with self.db:
-                self.db.execute(
-                    "INSERT INTO receipts VALUES (?,?,?)",
-                    (
-                        receipt["id"],
-                        receipt["ts"],
-                        self.vault.seal(json.dumps(receipt).encode(), "receipt:" + receipt["id"]),
-                    ),
-                )
+            receipt = self.commit_receipt(
+                "Context handoff", "Local app", items, len(text.encode()), {"format": "raw text"}
+            )
             return {"text": text, "receipt": receipt}
 
     def receipts(self):
@@ -187,14 +229,15 @@ class MemoryStore:
                 for mid in receipt.get("moment_ids", []):
                     moment = self.items.get(mid)
                     receipt["scope"].append(
-                        {
-                            "id": mid,
-                            "title": moment["title"] if moment else "Deleted moment",
-                            "app": moment["app"] if moment else "",
-                            "excerpt": moment["text"][:180] if moment else "",
-                            "deleted": moment is None,
-                        }
-                    )
+                    {
+                        "id": mid,
+                        "title": moment["title"] if moment else "Deleted moment",
+                        "app": moment["app"] if moment else "",
+                        "excerpt": moment["text"][:180] if moment else "",
+                        "ts": moment["ts"] if moment else None,
+                        "deleted": moment is None,
+                    }
+                )
                 result.append(receipt)
             return result
 

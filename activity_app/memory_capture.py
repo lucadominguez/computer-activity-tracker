@@ -1,4 +1,4 @@
-"""Opt-in screenshot/OCR worker. No network and no capture after a privacy pause."""
+"""Opt-in screenshot/OCR worker. No network except explicit context inference."""
 
 import hashlib
 import io
@@ -7,6 +7,7 @@ import threading
 import time
 from pathlib import Path
 
+from . import inference
 from .memory_store import MemoryStore
 
 DEFAULTS = {
@@ -16,7 +17,12 @@ DEFAULTS = {
     "max_gb": 2,
     "exclude_apps": ["1password", "bitwarden", "keepass", "lastpass", "credentialui"],
     "exclude_titles": ["password", "sign in", "log in", "incognito", "inprivate", "private browsing"],
+    "inference_enabled": False,
+    "inference_base_url": "",
+    "inference_model": "",
+    "inference_key": "",
 }
+SECRET_FIELDS = ("inference_key",)
 
 
 class MemoryRecorder:
@@ -63,11 +69,35 @@ class MemoryRecorder:
                 or any(not isinstance(v, str) or not 1 <= len(v) <= 100 for v in values)
             ):
                 raise ValueError("Invalid exclusions.")
+        if type(result["inference_enabled"]) is not bool:
+            raise ValueError("Inference must be enabled or disabled.")
+        for field, limit in (("inference_base_url", 200), ("inference_model", 120)):
+            if not isinstance(result[field], str) or len(result[field]) > limit:
+                raise ValueError("Invalid inference setting.")
+        if not isinstance(result["inference_key"], str) or len(result["inference_key"]) > 400:
+            raise ValueError("Invalid inference credential.")
         return result
+
+    def secrets(self):
+        """Secret settings, never returned by an API response or written to a log."""
+        with self.lock:
+            return {field: self.settings.get(field, "") for field in SECRET_FIELDS}
+
+    def public_settings(self):
+        with self.lock:
+            visible = {k: v for k, v in self.settings.items() if k not in SECRET_FIELDS}
+            visible["inference_key_set"] = bool(self.settings.get("inference_key"))
+            return visible
 
     def configure(self, changes):
         with self.lock:
+            changes = dict(changes)
+            clear_key = changes.pop("inference_key_clear", False)
+            if type(clear_key) is not bool:
+                raise ValueError("Invalid inference credential change.")
             updated = self.validate({**self.settings, **changes})
+            if clear_key:
+                updated["inference_key"] = ""
             encoded = self.store.vault.seal(json.dumps(updated).encode(), "settings")
             temp = self.path.with_suffix(".tmp")
             temp.write_bytes(encoded)
@@ -81,6 +111,44 @@ class MemoryRecorder:
             )
         return self.status()
 
+    def infer(self, ids):
+        """Infer what the chosen moments were about. Runs only when the UI asks."""
+        with self.lock:
+            settings = dict(self.settings)
+        if not settings["inference_enabled"]:
+            raise inference.NotConfigured(
+                "Context inference is off. Enable it in Settings and add a model endpoint."
+            )
+        items = self.store.context_items(ids, expand=True, limit=inference.MAX_MOMENTS)
+        started = time.time()
+        result = inference.infer(
+            items,
+            url=settings["inference_base_url"],
+            model=settings["inference_model"],
+            key=settings["inference_key"],
+        )
+        receipt = self.store.commit_receipt(
+            "Context inference",
+            "Local model call",
+            items,
+            result["characters"],
+            {
+                "format": "inferred context",
+                "model": result["model"],
+                "endpoint": result["endpoint"],
+                "duration_ms": int((time.time() - started) * 1000),
+                "context": result["context"],
+            },
+        )
+        return {
+            **result,
+            "receipt": receipt,
+            "sources": [
+                {"id": row["id"], "title": row["title"], "app": row["app"], "ts": row["ts"]}
+                for row in items
+            ],
+        }
+
     def status(self):
         with self.lock:
             state = self.state
@@ -89,7 +157,7 @@ class MemoryRecorder:
             return {
                 "state": state,
                 "message": self.message,
-                "settings": dict(self.settings),
+                "settings": self.public_settings(),
                 "last_saved": self.last_saved,
                 "engine": "On-device OCR",
             }

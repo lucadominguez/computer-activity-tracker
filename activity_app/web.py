@@ -125,8 +125,8 @@ class Handler(MemoryRoutes, BaseHTTPRequestHandler):
         if self.headers.get_all("Content-Length") is None or len(self.headers.get_all("Content-Length")) != 1:
             raise ValueError("A single Content-Length header is required.")
         length = int(self.headers["Content-Length"])
-        if not 0 < length <= 2048 or self.headers.get_content_type() != "application/json":
-            raise ValueError("Send a JSON object of at most 2048 bytes.")
+        if not 0 < length <= 8192 or self.headers.get_content_type() != "application/json":
+            raise ValueError("Send a JSON object of at most 8192 bytes.")
         body = json.loads(self.rfile.read(length).decode("utf-8"))
         if not isinstance(body, dict):
             raise ValueError("A JSON object is required.")

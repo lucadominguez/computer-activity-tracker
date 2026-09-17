@@ -59,7 +59,12 @@ async function api(path, body) {
         };
   const r = await fetch(path, options);
   const result = await r.json();
-  if (!r.ok) throw Error(result.error || "Local request failed.");
+  if (!r.ok) {
+    const error = Error(result.error || "Local request failed.");
+    error.status = r.status;
+    error.payload = result;
+    throw error;
+  }
   return result;
 }
 async function run(fn) {
@@ -151,9 +156,12 @@ async function detail(item, target, session = false, reveal = false) {
   const actions = el("div", "detail-actions");
   actions.append(
     button(
-      "Hand Off Context",
-      () => handoff(session ? item.ids : [full.id]),
+      "Infer context",
+      () => inferContext(session ? item.ids : [full.id]),
       "primary",
+    ),
+    button("Hand Off Context", () =>
+      handoff(session ? item.ids : [full.id]),
     ),
   );
   if (session)
@@ -191,7 +199,7 @@ async function detail(item, target, session = false, reveal = false) {
   const ocr = el("section", "ocr-panel");
   ocr.append(
     el("h2", "", session ? "Latest captured text" : "Text from this screen"),
-    el("span", "muted", "Read on this device · never sent to a model"),
+    el("span", "muted", "Read on this device"),
   );
   const text = el(
     "pre",
@@ -216,6 +224,167 @@ async function handoff(ids) {
     " released locally";
   $("#copy-status").textContent = "";
   $("#handoff-dialog").showModal();
+}
+async function inferContext(ids) {
+  const dialog = $("#infer-dialog"),
+    body = $("#infer-body");
+  $("#infer-scope").textContent =
+    "One request, only when you press this. The inferred reading is stored encrypted on this computer and the call is receipted in Access History.";
+  $("#infer-status").textContent = "";
+  $("#infer-copy").hidden = true;
+  $("#infer-settings").hidden = true;
+  $("#infer-plain").hidden = true;
+  $("#infer-text").value = "";
+  const waiting = el("div", "infer-running");
+  waiting.append(
+    el("span", "spinner", ""),
+    el(
+      "span",
+      "",
+      "Asking the model to read " +
+        ids.length +
+        (ids.length === 1 ? " saved moment" : " saved moments") +
+        "…",
+    ),
+  );
+  body.replaceChildren(waiting);
+  if (!dialog.open) dialog.showModal();
+  try {
+    renderInferResult(await api("/api/memory/infer", { ids }));
+  } catch (error) {
+    const card = el("div", "infer-off");
+    card.append(
+      el(
+        "strong",
+        "",
+        error.payload && error.payload.inference === "off"
+          ? "Inference is off"
+          : "The model did not answer",
+      ),
+      el("p", "", error.message),
+      el(
+        "p",
+        "muted",
+        "Nothing was stored. Screenshots are never sent, and no result is invented when a call fails.",
+      ),
+    );
+    body.replaceChildren(card);
+    $("#infer-settings").hidden = false;
+  }
+}
+function contextText(result) {
+  const c = result.context,
+    lines = [];
+  if (c.summary) lines.push("Summary: " + c.summary);
+  if (c.activity) lines.push("Activity: " + c.activity);
+  if (c.task) lines.push("Task in play: " + c.task);
+  if (c.entities.length) lines.push("Mentioned: " + c.entities.join(", "));
+  if (c.open_loops.length) lines.push("Open threads: " + c.open_loops.join("; "));
+  if (c.next_step) lines.push("Likely next step: " + c.next_step);
+  lines.push(
+    "Confidence: " +
+      c.confidence +
+      (c.unsourced ? " (no moment cited)" : " (" + c.evidence.length + " cited)"),
+  );
+  lines.push(
+    "Sources: " +
+      result.sources
+        .map((s) => (s.title || "Untitled") + " [" + s.app + "]")
+        .join("; "),
+  );
+  lines.push(
+    "Inferred by " +
+      result.model +
+      " at " +
+      result.endpoint +
+      " · " +
+      new Date(result.receipt.ts * 1000).toLocaleString(),
+  );
+  return lines.join("\n");
+}
+function renderInferResult(result) {
+  const c = result.context,
+    card = el("article", "infer-card"),
+    head = el("div", "infer-head");
+  head.append(
+    el("span", "confidence confidence-" + c.confidence, c.confidence + " confidence"),
+    el("span", "muted", result.model + " · " + result.endpoint),
+  );
+  card.append(head);
+  if (c.summary) card.append(el("p", "infer-summary", c.summary));
+  const facts = el("dl", "infer-facts");
+  for (const [label, value] of [
+    ["Activity", c.activity],
+    ["Task in play", c.task],
+    ["Likely next step", c.next_step],
+  ]) {
+    if (!value) continue;
+    const row = el("div");
+    row.append(el("dt", "", label), el("dd", "", value));
+    facts.append(row);
+  }
+  if (facts.childElementCount) card.append(facts);
+  if (c.entities.length) {
+    const block = el("div", "infer-block"),
+      tags = el("div", "infer-tags");
+    block.append(el("h3", "", "Mentioned"));
+    for (const entity of c.entities) tags.append(el("span", "tag", entity));
+    block.append(tags);
+    card.append(block);
+  }
+  if (c.open_loops.length) {
+    const block = el("div", "infer-block"),
+      list = el("ul", "infer-loops");
+    block.append(el("h3", "", "Open threads"));
+    for (const loop of c.open_loops) list.append(el("li", "", loop));
+    block.append(list);
+    card.append(block);
+  }
+  const sources = el("div", "infer-block"),
+    links = el("div", "infer-sources");
+  sources.append(el("h3", "", "Read from " + result.sources.length + " saved moments"));
+  if (c.unsourced)
+    sources.append(
+      el(
+        "p",
+        "muted",
+        "The model did not cite a specific moment. Treat this reading as unverified.",
+      ),
+    );
+  for (const source of result.sources) {
+    const row = el("div", "infer-source");
+    row.append(
+      el("strong", "", source.title || "Untitled"),
+      el("span", "muted", source.app + " · " + clock(source.ts)),
+      button("Open moment", async () => {
+        $("#infer-dialog").close();
+        await navigate("recall");
+        await detail(source, "#moment-detail", false, true);
+      }),
+    );
+    links.append(row);
+  }
+  sources.append(links);
+  card.append(sources);
+  card.append(
+    el(
+      "p",
+      "muted",
+      "Read from text you saved, so it can be wrong. " +
+        bytes(result.characters) +
+        " of text left this computer for " +
+        result.endpoint +
+        ". Receipt " +
+        result.receipt.id +
+        ".",
+    ),
+  );
+  $("#infer-body").replaceChildren(card);
+  $("#infer-text").value = contextText(result);
+  $("#infer-plain").hidden = false;
+  $("#infer-copy").hidden = false;
+  $("#infer-status").textContent =
+    "Receipt committed in Access History · " + result.model;
 }
 function confirmAction(title, description, action) {
   $("#confirm-title").textContent = title;
@@ -362,7 +531,21 @@ async function accessView() {
     );
     const sources = item.scope || [];
     const preview = sources.find((source) => !source.deleted);
-    if (preview)
+    if (item.endpoint)
+      row.append(
+        el(
+          "p",
+          "receipt-route",
+          "Sent to " +
+            item.endpoint +
+            " · " +
+            (item.model || "model") +
+            (item.duration_ms ? " · " + (item.duration_ms / 1000).toFixed(1) + " s" : ""),
+        ),
+      );
+    if (item.context && item.context.summary)
+      row.append(el("p", "receipt-preview", "Inferred: " + item.context.summary));
+    else if (preview)
       row.append(el("p", "receipt-preview", preview.excerpt || preview.title));
     const scope = el("details", "receipt-scope");
     scope.append(
@@ -391,6 +574,34 @@ async function accessView() {
         );
       scope.append(line);
     }
+    if (item.context) {
+      const actions = el("div", "receipt-actions");
+      actions.append(
+        button("Copy inferred context", async () => {
+          const text = contextText({
+            context: item.context,
+            model: item.model || "model",
+            endpoint: item.endpoint || "",
+            sources: (item.scope || [])
+              .filter((source) => !source.deleted && source.ts)
+              .map((source) => ({
+                id: source.id,
+                title: source.title,
+                app: source.app,
+                ts: source.ts,
+              })),
+            receipt: { ts: item.ts },
+          });
+          try {
+            await navigator.clipboard.writeText(text);
+            notice("Inferred context copied to the clipboard");
+          } catch {
+            notice("Copy failed. Select the text in the receipt instead.");
+          }
+        }),
+      );
+      row.append(actions);
+    }
     scope.append(el("p", "receipt-id", item.id));
     row.append(scope);
     list.append(row);
@@ -398,8 +609,8 @@ async function accessView() {
   if (!r.items.length)
     emptyList(
       list,
-      "No context has been handed off",
-      "Use Hand Off Context on a moment or session. A receipt is committed before any text is released.",
+      "No context has been inferred or handed off yet",
+      "Use Infer context on a saved moment or session. A receipt is committed before any text is released or any call is made.",
     );
 }
 function localDay(date = new Date()) {

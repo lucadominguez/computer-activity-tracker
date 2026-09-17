@@ -856,11 +856,19 @@ h2 {
 dialog {
   max-width: 600px;
   width: calc(100% - 32px);
+  max-height: 90vh;
+  overflow-y: auto;
   border: 1px solid #dce0eb;
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 20px 80px #19234a30;
   color: inherit;
+}
+dialog .dialog-actions {
+  position: sticky;
+  bottom: -1px;
+  background: #fff;
+  padding-bottom: 2px;
 }
 dialog::backdrop {
   background: #222b4b45;
@@ -1171,5 +1179,218 @@ summary {
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
+  }
+  .spinner {
+    animation: none;
+  }
+}
+/* Inferred context: one model reading, labelled as inference, never as fact. */
+.infer-card {
+  border: 1px solid #e2e5ec;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 15px;
+}
+.infer-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.confidence {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 20px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  background: #f4f5fa;
+}
+.confidence-high {
+  color: #2f6a52;
+  background: #edf7f1;
+  border-color: #d9e8df;
+}
+.confidence-medium {
+  color: #6b5a1f;
+  background: #fbf6e8;
+  border-color: #ece0c2;
+}
+.confidence-low {
+  color: #6b5566;
+  background: #f7f0f4;
+  border-color: #e7d9e2;
+}
+.infer-summary {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.infer-facts {
+  margin: 0;
+}
+.infer-facts > div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid #eef0f6;
+}
+.infer-facts dt {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.infer-facts dd {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.infer-block {
+  border-top: 1px solid #eef0f6;
+  margin-top: 14px;
+  padding-top: 13px;
+}
+.infer-block h3 {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.infer-block p {
+  margin: 0 0 8px;
+}
+.infer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.infer-tags .tag {
+  font-size: 11px;
+  background: var(--soft);
+  border: 1px solid #dde1f6;
+  border-radius: 14px;
+  padding: 3px 9px;
+  overflow-wrap: anywhere;
+}
+.infer-loops {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.infer-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.infer-source {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.infer-source strong {
+  flex: 1 1 180px;
+  overflow-wrap: anywhere;
+}
+.infer-source button,
+.receipt-actions button {
+  font-size: 10px;
+  padding: 5px 9px;
+}
+.infer-running {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #dfe3f2;
+  border-top-color: var(--accent);
+  animation: passage-spin 0.9s linear infinite;
+}
+@keyframes passage-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.infer-off {
+  border: 1px solid #ece0c2;
+  background: #fdfaf1;
+  border-radius: 12px;
+  padding: 14px 15px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.infer-off strong {
+  display: block;
+  margin-bottom: 6px;
+}
+.infer-off p {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+.receipt-route {
+  font-size: 10px;
+  color: var(--muted);
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+.receipt-actions {
+  margin-top: 9px;
+}
+.inference-settings {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 10px;
+}
+#infer-dialog {
+  max-width: 660px;
+  max-height: 90vh;
+}
+#infer-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+#infer-scope {
+  margin: 0 0 14px;
+}
+#infer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+#infer-dialog .dialog-actions {
+  flex: 0 0 auto;
+}
+#infer-text {
+  width: 100%;
+  max-height: 22vh;
+  font: 11px/1.6 "Segoe UI", sans-serif;
+}
+#infer-plain {
+  flex: 0 0 auto;
+}
+@media (max-width: 560px) {
+  .infer-facts > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  #infer-body {
+    max-height: none;
   }
 }

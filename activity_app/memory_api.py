@@ -2,6 +2,8 @@
 
 from urllib.parse import parse_qs, urlsplit
 
+from . import inference
+
 
 class MemoryRoutes:
     def memory_get(self, path):
@@ -65,6 +67,13 @@ class MemoryRoutes:
             self.send(200, memory.configure(body))
         elif path == "/api/memory/handoff":
             self.send(200, memory.store.handoff(body.get("ids")))
+        elif path == "/api/memory/infer":
+            try:
+                self.send(200, memory.infer(body.get("ids")))
+            except inference.NotConfigured as exc:
+                self.send(409, {"error": str(exc), "inference": "off"})
+            except inference.InferenceError as exc:
+                self.send(502, {"error": str(exc), "inference": "failed"})
         elif path == "/api/memory/delete":
             memory.store.delete(body.get("id"))
             self.send(200, {"ok": True})

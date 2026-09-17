@@ -83,6 +83,14 @@ async function settings() {
   $("#max-gb").value = c.max_gb;
   $("#excluded-apps").value = c.exclude_apps.join("\n");
   $("#excluded-titles").value = c.exclude_titles.join("\n");
+  $("#infer-enabled").checked = c.inference_enabled;
+  $("#infer-url").value = c.inference_base_url;
+  $("#infer-model").value = c.inference_model;
+  $("#infer-key").value = "";
+  $("#infer-clear-key").checked = false;
+  $("#infer-key-state").textContent = c.inference_key_set
+    ? "A key is stored in the encrypted vault. Leave the field blank to keep it."
+    : "No key is stored. Local endpoints that need no key can be left blank.";
   $("#settings-dialog").showModal();
 }
 function notice(text) {
@@ -90,12 +98,7 @@ function notice(text) {
   $("#toast").hidden = false;
   setTimeout(() => ($("#toast").hidden = true), 4500);
 }
-async function init() {
-  const fragment = location.hash.slice(1);
-  if (/^[A-Za-z0-9_-]{43}$/.test(fragment)) {
-    history.replaceState(null, "", location.pathname + location.search);
-    await api("/api/session", { token: fragment });
-  }
+function wire() {
   $("#timeline-day").value = localDay();
   document.querySelectorAll("nav a").forEach((a) =>
     a.addEventListener("click", (event) => {
@@ -182,17 +185,24 @@ async function init() {
           .value.split("\n")
           .map((v) => v.trim())
           .filter(Boolean);
-      await api("/api/memory/settings", {
+      const payload = {
         enabled: $("#capture-enabled").checked,
         interval: Number($("#capture-interval").value),
         days: Number($("#keep-days").value),
         max_gb: Number($("#max-gb").value),
         exclude_apps: list("#excluded-apps"),
         exclude_titles: list("#excluded-titles"),
-      });
+        inference_enabled: $("#infer-enabled").checked,
+        inference_base_url: $("#infer-url").value.trim(),
+        inference_model: $("#infer-model").value.trim(),
+        inference_key_clear: $("#infer-clear-key").checked,
+      };
+      const key = $("#infer-key").value;
+      if (key) payload.inference_key = key;
+      await api("/api/memory/settings", payload);
       $("#settings-dialog").close();
       await refreshStatus();
-      notice("Capture settings saved locally.");
+      notice("Settings saved locally.");
     });
   });
   $("#copy-handoff").onclick = () =>
@@ -207,6 +217,20 @@ async function init() {
         $("#copy-status").textContent = "Press Ctrl+C to copy selected text.";
       }
     });
+  $("#infer-copy").onclick = () =>
+    run(async () => {
+      try {
+        await navigator.clipboard.writeText($("#infer-text").value);
+        $("#infer-status").textContent = "Inferred context copied to the clipboard";
+      } catch {
+        const area = $("#infer-text");
+        $("#infer-plain").open = true;
+        area.focus();
+        area.select();
+        $("#infer-status").textContent = "Press Ctrl+C to copy the selected text.";
+      }
+    });
+  $("#infer-settings").onclick = () => run(settings);
   $("#quit").onclick = () => {
     $("#settings-dialog").close();
     confirmAction(
@@ -232,6 +256,15 @@ async function init() {
       $("#focus-search").click();
     }
   });
+}
+async function init() {
+  // Wire every control before the first await so an early click is never dropped.
+  wire();
+  const fragment = location.hash.slice(1);
+  if (/^[A-Za-z0-9_-]{43}$/.test(fragment)) {
+    history.replaceState(null, "", location.pathname + location.search);
+    await api("/api/session", { token: fragment });
+  }
   await navigate(new URLSearchParams(location.search).get("view") || "recall");
   pollTimer = setInterval(() => {
     if (!document.hidden) run(refreshStatus);
