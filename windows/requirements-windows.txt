@@ -1,1 +1,14 @@
 pynput==1.8.1
+uiautomation==2.0.29
+winrt-runtime==3.2.1
+winrt-Windows.Foundation==3.2.1
+winrt-Windows.Foundation.Collections==3.2.1
+winrt-Windows.Globalization==3.2.1
+winrt-Windows.Graphics.DirectX==3.2.1
+winrt-Windows.Graphics.Imaging==3.2.1
+winrt-Windows.Media.Ocr==3.2.1
+winrt-Windows.Storage==3.2.1
+winrt-Windows.Storage.Streams==3.2.1
+winrt-Windows.System==3.2.1
+Pillow==12.3.0
+cryptography==50.0.1

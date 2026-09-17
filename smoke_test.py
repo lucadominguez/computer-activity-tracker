@@ -15,10 +15,12 @@ Usage:  .venv/bin/python smoke_test.py
 Requires Xvfb :100 + openbox up, venv with python-xlib/mss.
 """
 import os
+import tempfile
 BASE = os.path.dirname(os.path.abspath(__file__))
-CCA_HOME = os.path.join(BASE, "data")
+_TEST_DATA = tempfile.TemporaryDirectory(prefix="activity-tracker-legacy-smoke-")
+CCA_HOME = _TEST_DATA.name
 os.environ.setdefault("DISPLAY", ":100")
-os.environ.setdefault("CCA_HOME", CCA_HOME)
+os.environ["CCA_HOME"] = CCA_HOME
 import json
 import re
 import shutil

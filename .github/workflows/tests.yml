@@ -23,6 +23,11 @@ jobs:
       - name: Run Windows core tests
         working-directory: windows
         run: python -m unittest -v
+      - name: Install native Windows input dependency
+        if: runner.os == 'Windows'
+        run: python -m pip install -r windows/requirements-windows.txt
+      - name: Run app and cross-process lock regressions
+        run: python -m unittest discover -s tests -v
 
   linux-core:
     runs-on: ubuntu-latest

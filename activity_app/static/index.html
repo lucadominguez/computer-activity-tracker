@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Computer Activity Tracker</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css"><script src="/app.js" defer></script>
+</head>
+<body class="loading">
+<a class="skip" href="#main">Skip to content</a>
+<div class="shell">
+<aside class="sidebar">
+  <a class="brand" href="#overview"><img src="/icon.svg" width="36" height="36" alt=""><span>Activity<span class="brand-sub">COMPUTER TIME, KEPT LOCAL</span></span></a>
+  <div class="nav-label">YOUR WORKSPACE</div>
+  <nav aria-label="Main navigation">
+    <a href="#overview" data-view="overview" aria-current="page"><span aria-hidden="true">▦</span>Overview</a>
+    <a href="#timeline" data-view="timeline"><span aria-hidden="true">≡</span>Timeline</a>
+    <a href="#privacy" data-view="privacy"><span aria-hidden="true">◇</span>Privacy &amp; data</a>
+  </nav>
+  <div class="sidebar-bottom"><span class="local-mark"><span aria-hidden="true">●</span> LOCAL BY DESIGN</span><p>No account. No uploads.<br>Your history stays on this computer.</p><span class="version">COMPUTER ACTIVITY TRACKER · 0.2</span></div>
+</aside>
+<div class="workspace">
+  <header class="topbar"><div><span class="crumb">PERSONAL ACTIVITY LOG</span><span class="status-pill" id="status-pill" data-state="starting"><span class="status-dot" aria-hidden="true"></span><span id="recording-state" role="status">Connecting</span></span></div><div class="top-actions"><button id="record-toggle" class="button primary" disabled>Start recording</button><button id="quit" class="button quiet" disabled>Quit tracker</button></div></header>
+  <main id="main" tabindex="-1">
+    <div class="page-heading"><div><p class="eyebrow" id="day-description">YOUR DAILY RECORD</p><h1 id="page-title">Day overview</h1><p class="subtitle" id="page-description">Where your computer time went. No productivity score attached.</p></div><div class="export-controls"><select id="export-format" aria-label="Export format"><option value="csv">CSV</option><option value="json">JSON</option></select><button class="button" id="export" disabled><span aria-hidden="true">↓</span> Export</button></div></div>
+    <div class="notice error" id="network-error" role="alert" hidden><span id="network-message"></span><button id="retry" class="button">Retry</button></div>
+    <div class="notice warning" id="capture-warning" role="alert" hidden></div>
+    <div class="datebar"><div class="date-controls"><button class="icon-button" id="previous-day" aria-label="Previous day">‹</button><label class="sr-only" for="day">Day</label><input id="day" type="date"><button class="icon-button" id="next-day" aria-label="Next day">›</button><button class="button quiet" id="today">Today</button></div><span class="timezone" id="timezone"></span></div>
+    <section id="view-overview" aria-labelledby="page-title">
+      <div class="metrics">
+        <article class="metric"><h2>Active window time</h2><div class="metric-value accent" id="active-total">0s</div><p>Time with a focused window</p></article>
+        <article class="metric"><h2>Away from keyboard</h2><div class="metric-value" id="afk-total">0s</div><p>After the idle threshold</p></article>
+        <article class="metric"><h2>Key releases</h2><div class="metric-value" id="key-total">0</div><p>Counts only, never the keys</p></article>
+        <article class="metric"><h2>Recorded segments</h2><div class="metric-value" id="event-total">0</div><p>Window and AFK intervals</p></article>
+      </div>
+      <div class="empty prominent" id="overview-empty" hidden><span class="empty-symbol" aria-hidden="true">▥</span><h2>No activity recorded for this day</h2><p>Start recording to build a timeline, or choose a day with existing history.</p></div>
+      <section class="panel chart-panel" aria-labelledby="chart-title"><div class="section-heading"><div><p class="eyebrow">THE SHAPE OF YOUR DAY</p><h2 id="chart-title">Activity across the day</h2></div><div class="legend"><span><i class="active-key"></i>Active</span><span><i class="afk-key"></i>Away</span></div></div><svg id="activity-chart" viewBox="0 0 960 156" role="img" aria-labelledby="chart-title chart-caption"></svg><div class="chart-axis"><span>00:00</span><span id="chart-midpoint">12:00</span><span>Next midnight</span></div><p class="fine-print" id="chart-caption">Recorded intervals only. Blank space is not assumed to be work or rest.</p></section>
+      <section class="panel" aria-labelledby="apps-title"><div class="section-heading"><div><p class="eyebrow">FOREGROUND APPLICATIONS</p><h2 id="apps-title">Time by app</h2></div><span class="muted" id="app-count">0 apps</span></div><div id="apps-list"></div><p class="empty" id="apps-empty">Apps will appear here as their focused time is recorded.</p></section>
+    </section>
+    <section id="view-timeline" hidden aria-labelledby="page-title">
+      <div class="timeline-tools"><div class="search-field"><label class="sr-only" for="search">Search window titles or apps</label><input id="search" type="search" placeholder="Search window titles or apps" maxlength="200"><kbd aria-hidden="true">/</kbd></div><label class="sr-only" for="kind">Event type</label><select id="kind"><option value="all">All events</option><option value="focus">Focused windows</option><option value="afk">Away from keyboard</option></select></div>
+      <div class="panel timeline-panel"><div class="section-heading"><h2>Window history</h2><span class="muted" id="matching-count">Loading history</span></div><div class="table-scroll" tabindex="0" role="region" aria-label="Activity history table"><table><thead><tr><th scope="col">Time</th><th scope="col">Application / window</th><th scope="col">Duration</th><th scope="col">Keys</th></tr></thead><tbody id="timeline-body"></tbody></table></div><div class="empty" id="timeline-empty" hidden><h3>No matching activity</h3><p>Try another date, clear your search, or change the event filter.</p></div><div class="pagination"><span id="page-range">0 events</span><div><button class="button quiet" id="previous-page" disabled>Previous</button><button class="button quiet" id="next-page" disabled>Next</button></div></div></div>
+      <p class="fine-print">Newest first. Date boundaries use your browser's timezone. Key counts belong to whole segments, including those that cross midnight.</p>
+    </section>
+    <section id="view-privacy" hidden aria-labelledby="page-title">
+      <div class="panel privacy-intro"><p class="eyebrow">A LOCAL RECORD, NOT A CLOUD SERVICE</p><h2>You keep the data.</h2><p>The recorder writes to SQLite on this computer. The dashboard connects only to its loopback address. There are no analytics, external fonts, account services, or automatic uploads.</p></div>
+      <div class="privacy-grid"><section class="panel"><h2>What is recorded</h2><ul><li>Focused window titles and application names</li><li>Start and end times of each interval</li><li>Aggregate key-release counts</li><li>Away-from-keyboard intervals</li></ul><p class="fine-print">Window titles can contain document names, websites, and other sensitive information. Pause before work you do not want recorded.</p></section><section class="panel"><h2>What is not recorded</h2><ul><li>The characters you type</li><li>Screenshots, screen video, or audio</li><li>Clipboard contents or document contents</li><li>Website URLs beyond text in a window title</li></ul><p class="fine-print">This app does not infer productivity, attention, or intent from a focused window.</p></section></div>
+      <section class="panel storage-panel"><h2>Storage &amp; controls</h2><dl><dt>Database on this computer</dt><dd><code id="database-path">Connecting</code></dd><dt>Idle threshold</dt><dd id="idle-threshold">Connecting</dd><dt>Recording status</dt><dd id="recording-detail">Connecting</dd></dl><p>Pause detaches input monitoring and survives a restart. Resume explicitly when you want to record again. Quit stops the recorder and local server. Closing this browser tab does not quit the tracker.</p><p>Use Export to download the selected day with the current timeline filters. CSV is spreadsheet-safe; JSON preserves the original title text. Exports can contain sensitive history. The database is not encrypted by this app; use your operating system's disk encryption.</p><p class="fine-print">No delete-history button is exposed to the browser. To remove local history, quit the tracker and manage the database file yourself after making any backup you want to keep.</p></section>
+    </section>
+    <footer class="workspace-footer"><span><span class="footer-dot" aria-hidden="true">●</span> Your computer. Your record.</span><span id="updated-at">Connecting to the local recorder</span></footer>
+  </main>
+</div>
+</div>
+<dialog id="quit-dialog" aria-labelledby="quit-title"><h2 id="quit-title">Stop the tracker?</h2><p>Recording and the local server will stop. Your history stays on disk. Open the app again to use it.</p><div class="dialog-actions"><button class="button" id="cancel-quit">Keep running</button><button class="button danger" id="confirm-quit">Stop and quit</button></div></dialog>
+</body>
+</html>

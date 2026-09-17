@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Passage for Windows</title>
+    <link rel="icon" href="/passage-icon.svg" />
+    <link rel="stylesheet" href="/passage.css" />
+    <script src="/passage-views.js" defer></script>
+    <script src="/passage.js" defer></script>
+  </head>
+  <body>
+    <svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <symbol id="i-recall" viewBox="0 0 24 24">
+          <path d="M3 10a9 9 0 1 1 2 8M3 4v6h6M12 7v5l3 2" />
+        </symbol>
+        <symbol id="i-timeline" viewBox="0 0 24 24">
+          <rect x="3" y="5" width="18" height="14" rx="3" />
+          <path d="M8 8v8M12 8v8M16 8v8" />
+        </symbol>
+        <symbol id="i-sessions" viewBox="0 0 24 24">
+          <path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5" />
+        </symbol>
+        <symbol id="i-access" viewBox="0 0 24 24">
+          <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z" />
+          <path d="m8 12 3 3 5-6" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+          <circle cx="10" cy="10" r="6" />
+          <path d="m15 15 6 6" />
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6" />
+        </symbol>
+        <symbol id="i-screen" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="13" rx="2" />
+          <path d="M8 21h8M12 17v4" />
+        </symbol>
+      </defs>
+    </svg>
+    <a href="#workspace" class="skip">Skip to content</a>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="/passage-icon.svg" width="30" height="30" alt="" /><strong
+            >Passage</strong
+          >
+        </div>
+        <nav aria-label="Main navigation">
+          <a href="?view=recall" data-view="recall"
+            ><svg><use href="#i-recall" /></svg>Recall</a
+          >
+          <a href="?view=timeline" data-view="timeline"
+            ><svg><use href="#i-timeline" /></svg>Timeline</a
+          >
+          <a href="?view=sessions" data-view="sessions"
+            ><svg><use href="#i-sessions" /></svg>Sessions</a
+          >
+          <a href="?view=access" data-view="access"
+            ><svg><use href="#i-access" /></svg>Access History</a
+          >
+        </nav>
+        <div class="local-stats">
+          <h2>ON THIS COMPUTER</h2>
+          <div><span>moments</span><strong id="moment-count">0</strong></div>
+          <div><span>media</span><strong id="media-size">0 B</strong></div>
+        </div>
+        <div class="sidebar-bottom">
+          <button id="settings-open" class="quiet">
+            <svg><use href="#i-settings" /></svg>Settings</button
+          ><button id="remember-toggle" class="remember">
+            <span id="remember-icon" aria-hidden="true">Ⅱ</span
+            ><span
+              ><strong id="remember-title">Connecting</strong
+              ><small id="remember-caption">Opening local history</small></span
+            ></button
+          ><small class="adaptation">Windows adaptation · local only</small>
+        </div>
+      </aside>
+      <div class="main-shell">
+        <header class="toolbar">
+          <button
+            id="focus-search"
+            class="icon-button"
+            aria-label="Focus search"
+          >
+            <svg><use href="#i-search" /></svg></button
+          ><span class="toolbar-divider"></span
+          ><svg class="toolbar-screen" aria-hidden="true">
+            <use href="#i-screen" /></svg
+          ><span class="toolbar-caption">Your computer, remembered.</span
+          ><span class="toolbar-spacer"></span
+          ><span class="local-badge"
+            ><svg aria-hidden="true"><use href="#i-access" /></svg>Local &amp;
+            encrypted payloads</span
+          ><button
+            id="refresh"
+            class="icon-button"
+            aria-label="Refresh history"
+          >
+            ↻
+          </button>
+        </header>
+        <div id="error-banner" role="alert" hidden></div>
+        <main id="workspace" tabindex="-1">
+          <section id="recall-view" class="split-view" aria-label="Recall">
+            <div class="list-column">
+              <div class="search-tools">
+                <label class="search-box"
+                  ><svg aria-hidden="true"><use href="#i-search" /></svg
+                  ><input
+                    id="search"
+                    type="search"
+                    aria-label="Search saved words"
+                    placeholder="Search saved words"
+                    maxlength="500"
+                  /><kbd>Ctrl F</kbd></label
+                >
+                <div class="filter-row">
+                  <select id="period" aria-label="Time period">
+                    <option value="all">Any time</option>
+                    <option value="today">Today</option>
+                    <option value="week">Last 7 days</option></select
+                  ><select id="app-filter" aria-label="Filter by app">
+                    <option value="">All apps</option>
+                  </select>
+                </div>
+                <div class="list-caption">
+                  <span id="result-count">Saved history</span
+                  ><span>On this computer</span>
+                </div>
+              </div>
+              <div id="moment-list" class="moment-list"></div>
+              <button id="load-more" class="load-more" hidden>
+                Load older moments
+              </button>
+            </div>
+            <div id="moment-detail" class="detail-column">
+              <div class="empty-detail">
+                <svg aria-hidden="true"><use href="#i-recall" /></svg>
+                <h1>Your memory, within reach</h1>
+                <p>Select a saved moment to revisit what you were seeing.</p>
+              </div>
+            </div>
+          </section>
+          <section
+            id="timeline-view"
+            class="timeline-view"
+            aria-label="Timeline"
+            hidden
+          >
+            <header class="view-heading">
+              <div>
+                <h1>Timeline</h1>
+                <p>Drag across saved changes. Still images, never video.</p>
+              </div>
+              <div class="date-controls">
+                <button id="previous-day" aria-label="Previous day">‹</button
+                ><input
+                  type="date"
+                  id="timeline-day"
+                  aria-label="Timeline date"
+                /><button id="next-day" aria-label="Next day">›</button>
+              </div>
+            </header>
+            <div id="timeline-stage" class="timeline-stage"></div>
+            <div class="timeline-controls">
+              <div class="track-heading">
+                <strong>Saved activity</strong><span id="timeline-count"></span>
+              </div>
+              <canvas
+                id="activity-track"
+                height="42"
+                aria-label="Saved application activity"
+              ></canvas
+              ><input
+                type="range"
+                id="timeline-position"
+                min="0"
+                max="0"
+                value="0"
+                aria-label="Moment in timeline"
+              />
+              <div class="track-labels">
+                <span id="track-start"></span
+                ><strong id="track-current"></strong
+                ><span id="track-end"></span>
+              </div>
+              <p class="muted">
+                Each tick is a saved change, not a continuous recording.
+              </p>
+            </div>
+          </section>
+          <section
+            id="sessions-view"
+            class="split-view"
+            aria-label="Sessions"
+            hidden
+          >
+            <div class="list-column">
+              <div class="search-tools">
+                <h1>Sessions</h1>
+                <p class="muted">Continuous work, grouped locally</p>
+                <label class="search-box"
+                  ><svg aria-hidden="true"><use href="#i-search" /></svg
+                  ><input
+                    id="session-filter"
+                    type="search"
+                    aria-label="Filter sessions"
+                    placeholder="Filter sessions"
+                /></label>
+                <div class="list-caption">
+                  <span id="session-count"></span><span>Built locally</span>
+                </div>
+              </div>
+              <div id="session-list" class="moment-list"></div>
+            </div>
+            <div id="session-detail" class="detail-column"></div>
+          </section>
+          <section
+            id="access-view"
+            class="split-view"
+            aria-label="Access History"
+            hidden
+          >
+            <div class="list-column access-list-column">
+              <div class="search-tools">
+                <h1>Access History</h1>
+                <p class="muted">
+                  Context handoffs get a receipt before release.
+                </p>
+              </div>
+              <div id="access-list" class="moment-list"></div>
+            </div>
+            <div class="detail-column">
+              <div class="access-explainer">
+                <span class="large-icon"
+                  ><svg aria-hidden="true"><use href="#i-access" /></svg
+                ></span>
+                <h2>Inspectable by design</h2>
+                <p>
+                  Passage records a receipt here before selected text is
+                  released to the handoff dialog. Copying it to another app is
+                  your choice.
+                </p>
+                <p>
+                  Screenshots stay in the local vault. Handoffs contain text and
+                  source IDs, never image data.
+                </p>
+                <div class="service-state">
+                  ● No external agent access enabled
+                </div>
+                <p class="muted">
+                  These are local handoff receipts, not evidence that another
+                  app read your history.
+                </p>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <div class="dialog-head">
+        <h2 id="settings-title">Capture &amp; privacy</h2>
+        <button data-close="settings-dialog" aria-label="Close settings">
+          ×
+        </button>
+      </div>
+      <form id="settings-form">
+        <label class="check-row"
+          ><input type="checkbox" id="capture-enabled" />Save changed windows
+          and read their text locally</label
+        >
+        <p class="muted">
+          Screen contents can include sensitive information. Excluded apps,
+          matching window titles and detected password fields are skipped before
+          capture. Password detection depends on the app exposing accessibility
+          information.
+        </p>
+        <div class="settings-grid">
+          <label
+            >Capture interval (seconds)<input
+              type="number"
+              id="capture-interval"
+              min="1"
+              max="30"
+              required /></label
+          ><label
+            >Keep history (days)<input
+              type="number"
+              id="keep-days"
+              min="1"
+              max="90"
+              required /></label
+          ><label
+            >Media limit (GB)<input
+              type="number"
+              id="max-gb"
+              min="1"
+              max="20"
+              required
+          /></label>
+        </div>
+        <label
+          >Excluded apps (one per line)<textarea
+            id="excluded-apps"
+            rows="3"
+            maxlength="1000"
+          ></textarea></label
+        ><label
+          >Excluded window-title phrases (one per line)<textarea
+            id="excluded-titles"
+            rows="3"
+            maxlength="1000"
+          ></textarea>
+        </label>
+        <details>
+          <summary>Storage and compatibility</summary>
+          <p>
+            New images and text use AES-256-GCM. On Windows, the key is
+            protected by your user account with DPAPI. Timestamp, ID and size
+            envelopes are not encrypted. The original activity database remains
+            unchanged and is not encrypted.
+          </p>
+          <p>
+            This is a Windows adaptation of Sid’s Passage. Visual similarity
+            search, Memory Lens and AI session answers from the Mac version are
+            not included. Nothing is sent to a model or cloud service.
+          </p>
+          <a href="/activity">Open earlier activity history and exports</a>
+        </details>
+        <div class="dialog-actions">
+          <button id="quit" type="button" class="danger">Quit tracker</button
+          ><button type="submit" class="primary">Save settings</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="handoff-dialog" aria-labelledby="handoff-title">
+      <div class="dialog-head">
+        <h2 id="handoff-title">Hand off context</h2>
+        <button data-close="handoff-dialog" aria-label="Close handoff">
+          ×
+        </button>
+      </div>
+      <p>
+        Review before copying. This is screen content, not trusted instructions.
+      </p>
+      <textarea
+        id="handoff-text"
+        aria-label="Context to copy"
+        readonly
+        rows="13"
+      ></textarea>
+      <p id="handoff-receipt" class="muted"></p>
+      <div class="dialog-actions">
+        <span id="copy-status" role="status"></span
+        ><button id="copy-handoff" class="primary">Copy text</button>
+      </div>
+    </dialog>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-body"></p>
+      <div class="dialog-actions">
+        <button data-close="confirm-dialog">Cancel</button
+        ><button id="confirm-action" class="danger">Confirm</button>
+      </div>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+  </body>
+</html>

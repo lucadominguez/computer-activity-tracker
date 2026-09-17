@@ -181,12 +181,15 @@ def run_tracker(data_dir, poll_seconds, idle_timeout, run_seconds=None):
     return 0
 
 
-def self_test(data_dir):
-    os.makedirs(data_dir, exist_ok=True)
-    path = database_path(data_dir)
-    if os.path.exists(path):
-        os.remove(path)
-    store = ActivityStore(path)
+def self_test(data_dir=None):
+    # --data-dir is intentionally ignored for self-tests: never reset user history.
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="activity-tracker-selftest-") as isolated:
+        return _isolated_self_test(isolated)
+
+
+def _isolated_self_test(data_dir):
+    store = ActivityStore(database_path(data_dir))
     engine = ActivityEngine(store, idle_timeout=180)
     engine.sample(100.0, ("SelfTest Editor", "notepad.exe"), 0)
     engine.record_key()

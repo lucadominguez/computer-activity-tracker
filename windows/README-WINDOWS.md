@@ -1,43 +1,34 @@
-# Windows installation
+# Windows: Passage adaptation
 
-The Windows collector is native. It does not use the Linux/X11 tracker.
+Run `install.cmd`, then open the **Passage** desktop shortcut. The previous
+**Computer Activity Tracker** shortcut still opens the same application.
 
-It records:
+Python 3.10+ is required; the native Windows path is exercised with Python 3.11.
+The installer creates `.venv`, installs pinned Windows capture/OCR dependencies,
+runs an isolated storage smoke test, and creates the two shortcuts. It does not
+automatically enable screenshots, autostart, or stop a running older recorder.
 
-- foreground window title
-- process executable name
-- focus duration
-- aggregate key-release count, never raw key values
-- AFK intervals based on `GetLastInputInfo`
+**Settings → Save screenshots and OCR** enables the new memory recorder. Windows
+OCR uses your installed recognizer language; install a supported language in
+Windows Settings if none is available. No OCR model is downloaded from an AI
+provider. Common password/private-window exclusions are only a safety net: pause
+before sensitive work. Closing the window does not stop recording; use **Quit
+app** in Settings.
 
-Data is stored at:
+The native GUI launch uses Chrome or Edge app-window mode when available, falling
+back to the default browser. Duplicate launches reopen the running server.
 
-```text
-%LOCALAPPDATA%\ComputerActivityTracker\activity.sqlite3
-```
+Data stays at `%LOCALAPPDATA%\ComputerActivityTracker`. The old
+`activity.sqlite3` and `focus`/`afk` schema remain intact. New encrypted payloads
+live under `passage`; its DPAPI-protected key depends on your Windows account.
+Earlier activity is available from Settings. Back up before upgrading, after
+quitting the old recorder. Do not delete or regenerate the vault key.
 
-The Desktop shortcut launches the collector through `pythonw.exe`, so no console window remains open. A named Windows mutex prevents duplicate tracker instances.
+For remote installation, an SSH process is in Session 0. Start the shortcut in
+the logged-in interactive session, not directly from SSH. A bounded interactive
+Task Scheduler task must explicitly permit running on battery and must produce
+a fresh on-desktop capture receipt. A scheduler success code alone proves nothing.
 
-## Manual commands
-
-From Command Prompt:
-
-```bat
-%USERPROFILE%\computer-activity-tracker\.venv\Scripts\python.exe %USERPROFILE%\computer-activity-tracker\windows\windows_activity_tracker.py --report
-```
-
-JSON export:
-
-```bat
-%USERPROFILE%\computer-activity-tracker\.venv\Scripts\python.exe %USERPROFILE%\computer-activity-tracker\windows\windows_activity_tracker.py --json
-```
-
-Run the deterministic storage self-test:
-
-```bat
-%USERPROFILE%\computer-activity-tracker\.venv\Scripts\python.exe %USERPROFILE%\computer-activity-tracker\windows\windows_activity_tracker.py --self-test --data-dir %USERPROFILE%\computer-activity-tracker\selftest-data
-```
-
-## Important
-
-The tracker must be started by double-clicking the Desktop shortcut in the logged-in Windows session. Processes launched over SSH run in session 0 and cannot prove foreground-window capture for the interactive desktop.
+See the [main README](../README.md) for exact privacy boundaries, limitations,
+upstream differences, and test commands. This is not a Windows build of Sid's
+Swift/SQLCipher/CoreML application.

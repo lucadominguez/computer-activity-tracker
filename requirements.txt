@@ -1,1 +1,3 @@
 python-xlib==0.33
+Pillow==12.3.0
+cryptography==50.0.1

@@ -7,3 +7,12 @@ __pycache__/
 data/
 selftest-data/
 ssh-smoke-data/
+build/
+dist/
+*.egg-info/
+.ruff_cache/
+runtime.json
+runtime.tmp
+settings.json
+settings.tmp
+app.lock

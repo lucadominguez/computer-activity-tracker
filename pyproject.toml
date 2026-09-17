@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "computer-activity-tracker"
+version = "0.3.0"
+description = "Passage-inspired local screenshot/OCR memory with preserved activity history"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+  "python-xlib==0.33; sys_platform == 'linux'",
+  "pynput==1.8.1; sys_platform == 'win32'",
+  "uiautomation==2.0.29; sys_platform == 'win32'",
+  "winrt-runtime==3.2.1; sys_platform == 'win32'",
+  "winrt-Windows.Foundation==3.2.1; sys_platform == 'win32'",
+  "winrt-Windows.Foundation.Collections==3.2.1; sys_platform == 'win32'",
+  "winrt-Windows.Globalization==3.2.1; sys_platform == 'win32'",
+  "winrt-Windows.Graphics.DirectX==3.2.1; sys_platform == 'win32'",
+  "winrt-Windows.Graphics.Imaging==3.2.1; sys_platform == 'win32'",
+  "winrt-Windows.Media.Ocr==3.2.1; sys_platform == 'win32'",
+  "winrt-Windows.Storage==3.2.1; sys_platform == 'win32'",
+  "winrt-Windows.Storage.Streams==3.2.1; sys_platform == 'win32'",
+  "winrt-Windows.System==3.2.1; sys_platform == 'win32'",
+  "Pillow==12.3.0",
+  "cryptography==50.0.1",
+]
+
+[project.optional-dependencies]
+dev = ["playwright==1.62.0", "ruff==0.16.6", "build==1.6.0", "pip-audit==2.10.1"]
+
+[project.scripts]
+computer-activity-tracker = "activity_app.__main__:entrypoint"
+
+[tool.setuptools]
+packages = ["activity_app", "windows"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+activity_app = ["static/*.html", "static/*.css", "static/*.js", "static/*.svg", "static/*.ico"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

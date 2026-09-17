@@ -1,0 +1,5 @@
+include README.md LICENSE activity_tracker.py computer_activity_tracker.py smoke_test.py test_tracker.py install.cmd launch.cmd requirements.txt
+recursive-include windows *.ps1 *.txt *.md
+recursive-include tests *.py
+recursive-include docs *.md *.png
+recursive-include activity_app/static *.html *.css *.js *.svg
